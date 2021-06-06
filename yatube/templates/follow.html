@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Подписка на избранных авторов{% endblock %}
+{% block header %}Подписка на избранных авторов{% endblock %}
+{% block content %}
+{% load cache %}
+
+{% cache 20 index_page using key page %}
+  <div class="container">
+
+    {% include "includes/menu.html" with index=True %}
+
+    <!-- Вывод ленты записей -->
+    {% for post in page %}
+      <!-- Отдельный пост -->
+      {% include "includes/post_item.html" with post=post %}
+    {% endfor %}
+    
+  </div>
+
+  <!-- Вывод паджинатора -->
+  {% include "includes/paginator.html" with items=page paginator=paginator%}
+
+{% endcache %} 
+
+{% endblock %}

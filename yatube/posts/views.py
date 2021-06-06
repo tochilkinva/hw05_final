@@ -130,7 +130,7 @@ def post_edit(request, username, post_id):
 @login_required
 def add_comment(request, username, post_id):
     post = get_object_or_404(Post, id=post_id)
-    form = CommentForm(request.POST)
+    form = CommentForm(request.POST or None)
     if request.method == 'POST':
         if form.is_valid():
             comment = form.save(commit=False)

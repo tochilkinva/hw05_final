@@ -28,3 +28,4 @@ class CommentForm(forms.ModelForm):
         help_texts = {
             'text': _('Добавьте текст комментария'),
         }
+        widgets = {'text': forms.Textarea({'rows': 3})}

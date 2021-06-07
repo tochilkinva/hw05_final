@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
 from .forms import CommentForm, PostForm
-from .models import Comment, Follow, Group, Post
+from .models import Follow, Group, Post
 
 User = get_user_model()
 
@@ -32,26 +32,18 @@ def group_posts(request, slug):
 def profile(request, username):
     author = get_object_or_404(User, username=username)
     posts_list = author.author_posts.all()
+    profile = author
     paginator = Paginator(posts_list, settings.POSTS_PER_PAGE)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
-    post_num = author.author_posts.count()
 
-    if request.user.is_authenticated:
-        following = Follow.objects.filter(user=request.user,
-                                          author=author).exists()
-    else:
-        following = False
+    following = False
+    if (request.user.is_authenticated
+       and Follow.objects.filter(user=request.user, author=author).exists()):
+        following = True
 
-    following_count = Follow.objects.filter(user=author).count()
-    followers_count = Follow.objects.filter(author=author).count()
-
-    profile = author
-
-    context = {'author': author, 'page': page,
-               'post_num': post_num, 'following': following,
-               'profile': profile, 'followers_count': followers_count,
-               'following_count': following_count}
+    context = {'author': author, 'page': page, 'following': following,
+               'profile': profile}
 
     return render(request, 'profile.html', context)
 
@@ -59,24 +51,16 @@ def profile(request, username):
 def post_view(request, username, post_id):
     post = get_object_or_404(Post, id=post_id, author__username=username)
     author = post.author
-    post_num = author.author_posts.count()
-    comments = Comment.objects.filter(post=post)
-    form = PostForm()
-    comments_form = CommentForm()
+    comments = post.comments.all()
+    form = CommentForm(request.POST or None)
 
-    if request.user.is_authenticated:
-        following = Follow.objects.filter(user=request.user,
-                                          author=author).exists()
-    else:
-        following = False
+    following = False
+    if (request.user.is_authenticated
+       and Follow.objects.filter(user=request.user, author=author).exists()):
+        following = True
 
-    following_count = Follow.objects.filter(user=author).count()
-    followers_count = Follow.objects.filter(author=author).count()
-    context = {'author': author, 'post': post, 'post_num': post_num,
-               'comments': comments, 'form': form,
-               'comments_form': comments_form,
-               'following': following, 'followers_count': followers_count,
-               'following_count': following_count}
+    context = {'author': author, 'post': post, 'comments': comments,
+               'form': form, 'following': following}
 
     return render(request, 'post.html', context)
 
@@ -107,8 +91,7 @@ def post_edit(request, username, post_id):
     is_new_post = False
     post = get_object_or_404(Post, id=post_id, author__username=username)
 
-    is_author = (post.author.username == request.user.username)
-    if not is_author:
+    if post.author != request.user:
         return redirect(reverse('post_view', args=[username, post_id]))
 
     form = PostForm(request.POST or None,
@@ -129,15 +112,13 @@ def post_edit(request, username, post_id):
 
 @login_required
 def add_comment(request, username, post_id):
-    post = get_object_or_404(Post, id=post_id)
+    post = get_object_or_404(Post, id=post_id, author__username=username)
     form = CommentForm(request.POST or None)
-    if request.method == 'POST':
-        if form.is_valid():
-            comment = form.save(commit=False)
-            comment.post = post
-            comment.author = request.user
-            comment.save()
-
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.post = post
+        comment.author = request.user
+        comment.save()
     return redirect(reverse('post_view', args=[username, post_id]))
 
 
@@ -156,8 +137,7 @@ def server_error(request):
 
 @login_required
 def follow_index(request):
-    follow = Follow.objects.filter(user=request.user).values_list('author')
-    post_list = Post.objects.filter(author__pk__in=follow)
+    post_list = Post.objects.filter(author__following__user=request.user)
     paginator = Paginator(post_list, settings.POSTS_PER_PAGE)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
@@ -167,7 +147,7 @@ def follow_index(request):
 @login_required
 def profile_follow(request, username):
     user = request.user
-    author = User.objects.get(username=username)
+    author = get_object_or_404(User, username=username)
     is_follower = Follow.objects.filter(user=user, author=author)
     if user != author and not is_follower.exists():
         Follow.objects.create(user=user, author=author)
@@ -177,7 +157,7 @@ def profile_follow(request, username):
 @login_required
 def profile_unfollow(request, username):
     user = request.user
-    author = User.objects.get(username=username)
+    author = get_object_or_404(User, username=username)
     is_follower = Follow.objects.filter(user=user, author=author)
     if is_follower.exists():
         Follow.objects.filter(user=user, author=author).delete()

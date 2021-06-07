@@ -144,9 +144,9 @@ class TaskPagesTests(TestCase):
             reverse('group_posts', kwargs={'slug': 'test-slug'})
         )
         one_post = response.context.get('page').object_list[0]
-        self.assertEqual(one_post.text, 'Test text')
-        self.assertEqual(one_post.author.username, 'Test')
-        self.assertEqual(one_post.group.title, 'GroupTest')
+        self.assertEqual(one_post.text, self.task.text)
+        self.assertEqual(one_post.author.username, self.task.author.username)
+        self.assertEqual(one_post.group.title, self.task.group.title)
         self.assertEqual(one_post.image, self.task.image)
 
     def test_newpost_page_shows_correct_context(self):
@@ -166,9 +166,9 @@ class TaskPagesTests(TestCase):
         response = self.authorized_client.get(
             f'/{TaskPagesTests.user.username}/')
         one_post = response.context.get('page').object_list[0]
-        self.assertEqual(one_post.text, 'Test text')
-        self.assertEqual(one_post.author.username, 'Test')
-        self.assertEqual(one_post.group.title, 'GroupTest')
+        self.assertEqual(one_post.text, self.task.text)
+        self.assertEqual(one_post.author.username, self.task.author.username)
+        self.assertEqual(one_post.group.title, self.task.group.title)
         self.assertEqual(one_post.image, self.task.image)
 
     def test_post_page_shows_correct_context(self):
@@ -176,9 +176,9 @@ class TaskPagesTests(TestCase):
         response = self.authorized_client.get(
             f'/{TaskPagesTests.user.username}/{self.task.id}/')
         one_post = response.context.get('post')
-        self.assertEqual(one_post.text, 'Test text')
-        self.assertEqual(one_post.author.username, 'Test')
-        self.assertEqual(one_post.group.title, 'GroupTest')
+        self.assertEqual(one_post.text, self.task.text)
+        self.assertEqual(one_post.author.username, self.task.author.username)
+        self.assertEqual(one_post.group.title, self.task.group.title)
         self.assertEqual(one_post.image, self.task.image)
 
     # Проверка появления постов там где надо
@@ -213,7 +213,6 @@ class TaskPagesTests(TestCase):
         """Кэш на главной странице работает корректно"""
         # Кэшируем главную страницу
         response = self.authorized_client.get(reverse('index'))
-        one_post = response.content
         # Создаем новый пост
         Post.objects.create(
             text='New Text',
@@ -221,9 +220,8 @@ class TaskPagesTests(TestCase):
         )
         # Обновляем запрос к главной странице
         cached_response = self.authorized_client.get(reverse('index'))
-        cached_one_post = cached_response.content
         # Контент должен быть одинаковым т.к. все закэшировано
-        self.assertEqual(one_post, cached_one_post)
+        self.assertEqual(response.content, cached_response.content)
 
     def test_authorized_client_can_follow(self):
         """Авторизованный пользователь может подписываться и отписываться"""
@@ -252,14 +250,14 @@ class TaskPagesTests(TestCase):
             reverse('profile_follow',
                     kwargs={'username': TaskPagesTests.user}))
         # TaskPagesTests.user создает пост
-        Post.objects.create(
+        newpost = Post.objects.create(
             text='Post for followers',
             author=TaskPagesTests.user,
         )
         # Смотрим ленту нашего user authorized_client2
         response = self.authorized_client2.get(reverse('follow_index'))
         one_post = response.context.get('page').object_list[0]
-        self.assertEqual(one_post.text, 'Post for followers')
+        self.assertEqual(one_post.text, newpost.text)
 
         # Пост не появился в ленте другого user authorized_client3
         response = self.authorized_client3.get(reverse('follow_index'))

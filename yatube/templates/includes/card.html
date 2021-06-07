@@ -13,14 +13,14 @@
     <ul class="list-group list-group-flush">
     <li class="list-group-item">
     <div class="h6 text-muted">
-       Подписчиков: {{ followers_count }} <br />
-       Подписан: {{ following_count }}
+       Подписчиков: {{ author.following.count }}  <br />
+       Подписан: {{ author.follower.count }} 
     </div>
     </li>
     <li class="list-group-item">
         <div class="h6 text-muted">
         <!-- Количество записей -->
-        Записей: {{ post_num }}
+        Записей: {{ author.author_posts.count }}
         </div>
     </li>
     </ul>

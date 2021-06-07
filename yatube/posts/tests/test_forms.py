@@ -81,8 +81,8 @@ class TaskCreateFormTests(TestCase):
         # Проверям редирект после содания поста
         self.assertRedirects(response, reverse('index'))
         # Проверяем, что создалась запись с нашим текстом
-        created_post = Post.objects.filter(text='Это тестовый текст',)
-        self.assertEqual(created_post[0].text, 'Это тестовый текст')
+        created_post = Post.objects.filter(text=form_data['text'],)
+        self.assertEqual(created_post[0].text, form_data['text'])
         self.assertEqual(created_post[0].group, TaskCreateFormTests.group)
         self.assertEqual(created_post[0].author, TaskCreateFormTests.user)
         self.assertEqual(created_post[0].image, 'posts/small.gif')
@@ -107,10 +107,10 @@ class TaskCreateFormTests(TestCase):
         )
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertTrue(
-            Post.objects.filter(text='Test Text 2222').exists()
+            Post.objects.filter(text=form_data['text']).exists()
         )
         self.assertEqual(
-            Post.objects.filter(text='Test Text 2222')[0].group.slug,
+            Post.objects.filter(text=form_data['text'])[0].group.slug,
             TaskCreateFormTests.another_group.slug)
 
     # Проверяем публикацию поста неавторизованным клиентом
@@ -129,7 +129,7 @@ class TaskCreateFormTests(TestCase):
         self.assertRedirects(
             response, (f"{reverse('login')}?next={reverse('new_post')}"))
         self.assertFalse(
-            Post.objects.filter(text='Этот пост не создали',).exists())
+            Post.objects.filter(text=form_data['text'],).exists())
 
     # Проверяем комментарии
     def test_guest_client_cannot_create_comments_task(self):

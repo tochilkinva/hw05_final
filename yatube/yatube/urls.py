@@ -13,7 +13,6 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-import debug_toolbar
 from django.conf import settings
 from django.conf.urls import handler404, handler500
 from django.conf.urls.static import static
@@ -24,7 +23,6 @@ handler404 = 'posts.views.page_not_found'  # noqa
 handler500 = 'posts.views.server_error'  # noqa
 
 urlpatterns = [
-    path('__debug__/', include(debug_toolbar.urls)),
     path('admin/', admin.site.urls),
     path('', include('posts.urls')),
     path('auth/', include('users.urls')),
@@ -37,5 +35,5 @@ if settings.DEBUG:
                           document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL,
                           document_root=settings.STATIC_ROOT)
-    urlpatterns += (path("__debug__/", include(debug_toolbar.urls)),)
-    path('__debug__/', include(debug_toolbar.urls)),
+    import debug_toolbar
+    urlpatterns += (path('__debug__/', include(debug_toolbar.urls)),)
